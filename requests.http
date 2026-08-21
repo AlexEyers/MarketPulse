@@ -1,1 +1,1 @@
-GET http://localhost:8080/api/stocks/AAPL
+GET http://localhost:8080/api/stocks/NVDA
