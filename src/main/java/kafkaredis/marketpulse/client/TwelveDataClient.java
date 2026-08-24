@@ -17,11 +17,12 @@ import java.time.Instant;
 @RequiredArgsConstructor
 public class TwelveDataClient implements MarketDataClient {
 
+    private final RestClient restClient;
     private final TwelveDataProperties twelveDataProperties; // baseUrl and apiKey
 
     @Override
     public StockQuoteDTO getStock(String symbol) {
-        RestClient restClient = RestClient.create(twelveDataProperties.baseUrl());
+        //RestClient restClient = RestClient.create(twelveDataProperties.baseUrl());
         TwelveDataPriceResponseDTO response;
 
         // Call Twelve Data API, if the request fails before getting a usable response, throw exception.
