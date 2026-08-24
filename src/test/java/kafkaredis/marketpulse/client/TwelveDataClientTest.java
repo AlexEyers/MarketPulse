@@ -24,14 +24,15 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 
 class TwelveDataClientTest {
 
-    private static final String BASE_URL = "https://api.twelvedata.com";
-    private static final String API_KEY = "test-api-key";
+    private static final String BASE_URL = "https://fake-twelve-data.test";
+    private static final String API_KEY = "replace-with-anything";
 
     private MockRestServiceServer server;
     private TwelveDataClient twelveDataClient;
 
-    @BeforeEach
-    void setUp() {
+    // Create a fresh fake HTTP server and TwelveDataClient before each test
+    @BeforeEach // Run this at the start of every test
+    void setUp() { // Abstract away this part from having to be written in every test
         RestClient.Builder builder = RestClient.builder();
 
         // Mock server attaches to this RestClient builder and intercepts HTTP requests in memory.
@@ -48,20 +49,20 @@ class TwelveDataClientTest {
 
     @Test
     void getStock_returnsQuoteWhenProviderReturnsPrice() {
-        server.expect(once(), requestTo(BASE_URL + "/price?symbol=AAPL&apikey=" + API_KEY))
-                .andExpect(method(HttpMethod.GET))
+        server.expect(once(), requestTo(BASE_URL + "/price?symbol=AAPL&apikey=" + API_KEY)) // Expect exactly 1 request to this URL
+                .andExpect(method(HttpMethod.GET)) // Method must be a GET request
                 .andRespond(withSuccess("""
                         {
                           "price": "123.45"
                         }
-                        """, MediaType.APPLICATION_JSON));
+                        """, MediaType.APPLICATION_JSON)); // When the expected request happens, return fake JSON with price 123.45
 
-        StockQuoteDTO result = twelveDataClient.getStock("AAPL");
+        StockQuoteDTO result = twelveDataClient.getStock("AAPL"); // Call real TwelveDataClient, which tries to make a HTTP request, but the mock server interceps and returns the fake JSON
 
-        assertEquals("AAPL", result.symbol());
-        assertEquals(new BigDecimal("123.45"), result.price());
+        assertEquals("AAPL", result.symbol()); // Assert that client returned the fake symbol
+        assertEquals(new BigDecimal("123.45"), result.price()); // Assert that client returned the fake price
 
-        server.verify();
+        server.verify(); // Check that the expected HTTP call actually happened (expect catches wrong calls, verify catches missing calls)
     }
 
     @Test
