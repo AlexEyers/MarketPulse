@@ -8,14 +8,19 @@ import kafkaredis.marketpulse.exception.StockNotFoundException;
 import kafkaredis.marketpulse.service.StockService;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.MockMvc;
+import kafkaredis.marketpulse.service.StockCacheService;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Optional;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class StockControllerTest {
 
@@ -30,8 +35,11 @@ class StockControllerTest {
                 Instant.now()
         );
 
-        // Build Controller -> StockService -> Fake MarketDataClient chain
-        StockService stockService = new StockService(fakeClient);
+        // Build Controller -> StockService -> StockCacheService -> Fake MarketDataClient chain
+        StockCacheService stockCacheService = mock(StockCacheService.class);
+        when(stockCacheService.get(anyString())).thenReturn(Optional.empty());
+        StockService stockService = new StockService(fakeClient, stockCacheService);
+
         StockController stockController = new StockController(stockService);
 
         // Create in-memory MVC test setup
@@ -56,7 +64,10 @@ class StockControllerTest {
             throw new AssertionError("Market data client should not be called");
         };
 
-        StockService stockService = new StockService(fakeClient);
+        // no when(...) needed as should never even get to the check cache point
+        StockCacheService stockCacheService = mock(StockCacheService.class);
+        StockService stockService = new StockService(fakeClient, stockCacheService);
+
         StockController stockController = new StockController(stockService);
 
         MockMvc mockMvc = standaloneSetup(stockController)
@@ -77,7 +88,10 @@ class StockControllerTest {
             throw new StockNotFoundException("Stock symbol was not found");
         };
 
-        StockService stockService = new StockService(fakeClient);
+        StockCacheService stockCacheService = mock(StockCacheService.class);
+        when(stockCacheService.get(anyString())).thenReturn(Optional.empty());
+        StockService stockService = new StockService(fakeClient, stockCacheService);
+
         StockController stockController = new StockController(stockService);
 
         MockMvc mockMvc = standaloneSetup(stockController)
@@ -97,7 +111,10 @@ class StockControllerTest {
             throw new MarketDataUnavailableException("Market data provider is unavailable");
         };
 
-        StockService stockService = new StockService(fakeClient);
+        StockCacheService stockCacheService = mock(StockCacheService.class);
+        when(stockCacheService.get(anyString())).thenReturn(Optional.empty());
+        StockService stockService = new StockService(fakeClient, stockCacheService);
+
         StockController stockController = new StockController(stockService);
 
         MockMvc mockMvc = standaloneSetup(stockController)
