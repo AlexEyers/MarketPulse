@@ -7,11 +7,15 @@ spring:
       host: localhost
       port: 6379
 
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration
-      - org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration
-      - org.springframework.boot.flyway.autoconfigure.FlywayAutoConfiguration
+  datasource:
+    url: jdbc:postgresql://localhost:5433/marketpulse
+    username: marketpulse_user
+    password: marketpulse_password
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
 
 twelve-data:
   api:
