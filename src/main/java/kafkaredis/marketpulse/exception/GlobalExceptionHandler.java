@@ -35,4 +35,31 @@ public class GlobalExceptionHandler {
                 ex.getMessage()
         ));
     }
+
+    // 404 Not Found
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<ApiErrorResponseDTO> handleUserNotFoundException(UserNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiErrorResponseDTO(
+                "USER_NOT_FOUND",
+                ex.getMessage()
+        ));
+    }
+
+    // 404 Not Found
+    @ExceptionHandler(WatchlistItemNotFoundException.class)
+    public ResponseEntity<ApiErrorResponseDTO> handleWatchlistItemNotFoundException(WatchlistItemNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiErrorResponseDTO(
+                "WATCHLIST_ITEM_NOT_FOUND",
+                ex.getMessage()
+        ));
+    }
+
+    // 409 Conflict
+    @ExceptionHandler(WatchlistItemAlreadyExistsException.class)
+    public ResponseEntity<ApiErrorResponseDTO> handleWatchlistItemAlreadyExistsException(WatchlistItemAlreadyExistsException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiErrorResponseDTO(
+                "WATCHLIST_ITEM_ALREADY_EXISTS",
+                ex.getMessage()
+        ));
+    }
 }
