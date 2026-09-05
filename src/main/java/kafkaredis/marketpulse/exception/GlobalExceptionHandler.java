@@ -3,6 +3,7 @@ package kafkaredis.marketpulse.exception;
 import kafkaredis.marketpulse.dto.ApiErrorResponseDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -60,6 +61,40 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiErrorResponseDTO(
                 "WATCHLIST_ITEM_ALREADY_EXISTS",
                 ex.getMessage()
+        ));
+    }
+
+    // 409 Conflict
+    @ExceptionHandler(UsernameAlreadyExistsException.class)
+    public ResponseEntity<ApiErrorResponseDTO> handleUsernameAlreadyExistsException(UsernameAlreadyExistsException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiErrorResponseDTO(
+                "USERNAME_ALREADY_EXISTS",
+                ex.getMessage()
+        ));
+    }
+
+    // 409 Conflict
+    @ExceptionHandler(EmailAlreadyExistsException.class)
+    public ResponseEntity<ApiErrorResponseDTO> handleEmailAlreadyExistsException(EmailAlreadyExistsException ex) {
+         return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiErrorResponseDTO(
+                 "EMAIL_ALREADY_EXISTS",
+                 ex.getMessage()
+         ));
+    }
+
+    // 400 Bad Request
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiErrorResponseDTO> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
+        String message = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .findFirst()
+                .map(fieldError -> fieldError.getField() + " " + fieldError.getDefaultMessage())
+                .orElse("Request validation failed");
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiErrorResponseDTO(
+                "VALIDATION_ERROR",
+                message
         ));
     }
 }
