@@ -97,4 +97,12 @@ public class GlobalExceptionHandler {
                 message
         ));
     }
+
+    @ExceptionHandler(PriceAlertAlreadyExistsException.class)
+    public ResponseEntity<ApiErrorResponseDTO> handlePriceAlertAlreadyExistsException(PriceAlertAlreadyExistsException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiErrorResponseDTO(
+                "PRICE_ALERT_ALREADY_EXISTS",
+                ex.getMessage()
+        ));
+    }
 }
