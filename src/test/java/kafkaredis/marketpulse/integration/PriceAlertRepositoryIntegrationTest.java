@@ -9,8 +9,11 @@ import kafkaredis.marketpulse.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
@@ -26,6 +29,9 @@ class PriceAlertRepositoryIntegrationTest extends PostgresIntegrationTest {
 
     @Autowired
     private PriceAlertRepository priceAlertRepository;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     // Test that a PriceAlert can be saved and found by user ID
     @Test
@@ -195,5 +201,135 @@ class PriceAlertRepositoryIntegrationTest extends PostgresIntegrationTest {
                 new BigDecimal("200.0000"),
                 PriceAlertStatus.ACTIVE
         ));
+    }
+
+    // Test that findDistinctActiveSymbols returns each active, non-expired symbol once
+    @Test
+    void findDistinctActiveSymbols() {
+
+        User user = userRepository.save(new User(
+                "user",
+                "user@example.com",
+                "hashed-password"
+        ));
+
+        User user2 = userRepository.save(new User(
+                "user2",
+                "user2@example.com",
+                "hashed-password"
+        ));
+
+        priceAlertRepository.save(new PriceAlert(
+                user,
+                "AAPL",
+                PriceAlertConditionType.ABOVE,
+                new BigDecimal("200.0000")
+        ));
+
+        priceAlertRepository.save(new PriceAlert(
+                user2,
+                "AAPL",
+                PriceAlertConditionType.ABOVE,
+                new BigDecimal("200.0000")
+        ));
+
+        priceAlertRepository.save(new PriceAlert(
+                user,
+                "MSFT",
+                PriceAlertConditionType.BELOW,
+                new BigDecimal("300.0000")
+        ));
+
+        List<String> result = priceAlertRepository.findDistinctActiveSymbols(
+                PriceAlertStatus.ACTIVE,
+                Instant.now()
+        );
+
+        assertEquals(2, result.size());
+        assertTrue(result.contains("AAPL"));
+        assertTrue(result.contains("MSFT"));
+    }
+
+    // Test that findByStatusAndSymbolAndExpiresAtAfter returns active, non-expired alerts for 1 symbol
+    @Test
+    void findByStatusAndSymbolAndExpiresAtAfter() {
+        User user = userRepository.save(new User(
+                "user",
+                "user@example.com",
+                "hashed-password"
+        ));
+
+        priceAlertRepository.save(new PriceAlert(
+                user,
+                "AAPL",
+                PriceAlertConditionType.ABOVE,
+                new BigDecimal("200.0000")
+        ));
+
+        priceAlertRepository.save(new PriceAlert(
+                user,
+                "MSFT",
+                PriceAlertConditionType.BELOW,
+                new BigDecimal("300.0000")
+        ));
+
+        List<PriceAlert> result = priceAlertRepository.findByStatusAndSymbolAndExpiresAtAfter(
+                PriceAlertStatus.ACTIVE,
+                "AAPL",
+                Instant.now()
+        );
+
+        assertEquals(1, result.size());
+        assertEquals("AAPL", result.get(0).getSymbol());
+        assertEquals(PriceAlertStatus.ACTIVE, result.get(0).getStatus());
+    }
+
+    // Test that findByStatusAndExpiresAtLessThanEqual returns active alerts that have expired
+    @Test
+    void findByStatusAndExpiresAtLessThanEqual() {
+        User user = userRepository.save(new User(
+                "user",
+                "user@example.com",
+                "hashed-password"
+        ));
+
+        Instant now = Instant.now();
+
+        priceAlertRepository.save(new PriceAlert(
+                user,
+                "MSFT",
+                PriceAlertConditionType.BELOW,
+                new BigDecimal("300.0000")
+        ));
+
+        jdbcTemplate.update("""
+                        INSERT INTO price_alerts (
+                            user_id,
+                            symbol,
+                            condition_type,
+                            target_price,
+                            status,
+                            created_at,
+                            expires_at
+                        )
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                        """,
+                user.getId(),
+                "AAPL",
+                "ABOVE",
+                new BigDecimal("200.0000"),
+                "ACTIVE",
+                Timestamp.from(now.minus(25, ChronoUnit.HOURS)),
+                Timestamp.from(now.minus(1, ChronoUnit.HOURS))
+        );
+
+        List<PriceAlert> result = priceAlertRepository.findByStatusAndExpiresAtLessThanEqual(
+                PriceAlertStatus.ACTIVE,
+                now
+        );
+
+        assertEquals(1, result.size());
+        assertEquals("AAPL", result.get(0).getSymbol());
+        assertEquals(PriceAlertStatus.ACTIVE, result.get(0).getStatus());
     }
 }

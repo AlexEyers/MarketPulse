@@ -21,3 +21,8 @@ twelve-data:
   api:
     base-url: https://api.twelvedata.com
     api-key: ${TWELVE_DATA_API_KEY}
+
+market-pulse:
+  alerts:
+    scheduler:
+      fixed-delay-ms: 900000

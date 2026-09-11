@@ -56,4 +56,30 @@ public class PriceAlert {
         this.createdAt = Instant.now();
         this.expiresAt = this.createdAt.plus(24, ChronoUnit.HOURS);
     }
+
+    // Check if a PriceAlert should be triggered
+    public boolean isTriggeredBy(BigDecimal currentPrice) {
+        // If condition is ABOVE, then return true if the currentPrice is larger than the target price
+        if(conditionType == PriceAlertConditionType.ABOVE) {
+            return currentPrice.compareTo(targetPrice) >= 0;
+        }
+        // If condition is BELOW, then return true if the currentPrice is lower than the target price
+        if(conditionType == PriceAlertConditionType.BELOW) {
+            return currentPrice.compareTo(targetPrice) <= 0;
+        }
+
+        return false;
+    }
+
+    public void markTriggered() {
+        this.status = PriceAlertStatus.TRIGGERED;
+    }
+
+    public void markExpired() {
+        this.status = PriceAlertStatus.EXPIRED;
+    }
+
+    public void markDisabled() {
+        this.status = PriceAlertStatus.DISABLED;
+    }
 }
